@@ -1,0 +1,11 @@
+native/*.app/
+*.tgz
+.DS_Store
+node_modules/
+.env
+.env.*
+!.env.example
+.live-annotation/
+service.json
+submissions/
+voice-sessions/

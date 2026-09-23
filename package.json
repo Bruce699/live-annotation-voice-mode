@@ -1,0 +1,36 @@
+{
+  "name": "live-annotation-sidebar",
+  "version": "0.2.0",
+  "description": "Local voice and screenshot annotation sidebar with structured agent submissions",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "live-annotation": "cli.cjs"
+  },
+  "scripts": {
+    "start": "node cli.cjs start",
+    "test": "node --test test/*.test.cjs",
+    "build:voice": "node scripts/build-voice.cjs"
+  },
+  "files": [
+    "cli.cjs",
+    "server.cjs",
+    "voice-session.cjs",
+    "speech-transcript.cjs",
+    "lib",
+    "public",
+    "scripts",
+    "native/voice-helper.swift",
+    "native/voice-info.plist",
+    "SKILL.md",
+    "references",
+    "examples",
+    "README.md",
+    "test",
+    "THIRD_PARTY_NOTICES.txt",
+    "HTML2CANVAS-LICENSE.txt"
+  ]
+}
