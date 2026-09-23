@@ -24,7 +24,7 @@ test('push sends actual labeled image bytes and accepts only the destination rec
  const receiver=createReceiver({directory,token:'test-token',submit:async bundle=>{calls++;received=bundle;return 'real-test-turn'}});
  await new Promise(resolve=>receiver.listen(0,'127.0.0.1',resolve));t.after(async()=>{await new Promise(r=>receiver.close(r));await fs.rm(directory,{recursive:true,force:true})});
  const app=await setup(t,{webhook:'http://127.0.0.1:'+receiver.address().port+'/prompt',webhookToken:'test-token'});
- const bytes='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aE2sAAAAASUVORK5CYII=';
+ const bytes='iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFklEQVR4nGNwaPhAEmIY1TCqYfhqAAD5vLAQg01R4wAAAABJRU5ErkJggg==';
  const input={...draft(),text:'Here [Image 7]',images:[{id:crypto.randomUUID(),number:7,kind:'laser',data:'data:image/png;base64,'+bytes}]};
  await app.api('submissions',input);await until(()=>app.store.read(input.id),s=>s.status==='delivered');assert.equal(calls,1);assert.equal(received.images[0].label,'Image 7');assert.equal(await fs.readFile(received.images[0].path,'base64'),bytes);assert.equal(received.prompt.content[1].label,'Image 7');
  await app.api('submissions',input);assert.equal(calls,1);assert.equal((await app.store.read(input.id)).receiptId,'real-test-turn');
@@ -43,4 +43,10 @@ test('submissions arriving during an active push are delivered without requiring
 });
 test('server owns project routing and ignores browser-supplied conversation overrides',async t=>{
  const project={id:'project-a',name:'Project A',url:'http://localhost:3000/',conversationId:'task-a'},app=await setup(t,{project}),input={...draft(),project:{id:'evil',conversationId:'task-b'}};await app.api('submissions',input);const bundle=await app.store.bundle(input.id);assert.deepEqual(bundle.prompt.project,project);assert.equal((await app.api('status')).project.conversationId,'task-a');
+});
+test('connected desktop delivery sends on Submit without a polling agent, preserving local screenshots',async t=>{
+ let received;const app=await setup(t,{deliveryMode:'codex',submit:async bundle=>{received=bundle;return {submissionId:bundle.prompt.id,receiptId:'desktop-accepted'}}});
+ const bytes='iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFklEQVR4nGNwaPhAEmIY1TCqYfhqAAD5vLAQg01R4wAAAABJRU5ErkJggg==';
+ const input={...draft(),text:'Here [Image 3]',images:[{id:crypto.randomUUID(),number:3,kind:'rectangle',data:'data:image/png;base64,'+bytes}]};
+ await app.api('submissions',input);await until(()=>app.store.read(input.id),s=>s.status==='delivered');assert.equal(received.prompt.transcript,input.text);assert.equal(received.attachments[0].label,'Image 3');assert.equal(await fs.readFile(received.attachments[0].absolutePath,'base64'),bytes);assert.equal((await app.api('status')).mode,'codex');assert.equal((await app.api('claim',{})).httpStatus,409);
 });

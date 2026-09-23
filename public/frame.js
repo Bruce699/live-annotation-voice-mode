@@ -2,7 +2,7 @@
 const model=window.studyModel,$=s=>document.querySelector(s),input=$('#chat-input');
 document.body.className='demo-view chat-visible scene-shell';document.body.dataset.layout=model.layout;
 $('#chat-panel').hidden=false;$('.navigation').hidden=false;$('#chat-toggle').hidden=false;
-$('#chat-project').textContent=model.name||'Open Layer';$('#chat-project-title').textContent=model.name||'Open Layer';$('#chat-demo').textContent='';
+$('#chat-project').textContent=model.name||'Live Annotation';$('#chat-project-title').textContent=model.name||'Live Annotation';$('#chat-demo').textContent='';
 $('#chat-older').hidden=true;$('#chat-activity').textContent='';$('#chat-connection').textContent='';$('#chat-open-codex').remove();
 $('#chat-transcript').replaceChildren();$('#chat-conversation').replaceChildren();
 model.messages=Array.isArray(model.messages)?model.messages:[];

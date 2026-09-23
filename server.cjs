@@ -1,19 +1,24 @@
 const http=require('node:http'),fs=require('node:fs'),fsp=require('node:fs/promises'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto');
 const {Store}=require('./lib/store.cjs'),{VoiceSession}=require('./voice-session.cjs');
 const DEFAULT_DIRECTORY=path.join(os.homedir(),'.live-annotation');
-function createServer({directory=DEFAULT_DIRECTORY,Voice=VoiceSession,voiceAvailable=process.platform==='darwin',webhook=null,webhookToken=null,project=null,preview=null}={}){
+function createServer({directory=DEFAULT_DIRECTORY,Voice=VoiceSession,voiceAvailable=process.platform==='darwin',webhook=null,webhookToken=null,submit=null,deliveryMode=null,project=null,preview=null}={}){
+ const mode=deliveryMode||(submit?'push':webhook?'webhook':'queue'),push=!!(submit||webhook);
+ if(submit&&webhook)throw Error('Choose one delivery destination');
  if(webhook){const url=new URL(webhook);if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw Error('Receiver must be an HTTP(S) URL without embedded credentials');if(url.protocol==='http:'&&!['localhost','127.0.0.1','[::1]'].includes(url.hostname))throw Error('Remote receivers require HTTPS')}
  const token=crypto.randomBytes(32).toString('hex'),store=new Store(directory),sessions=new Map();let active=null,delivering=false,claiming=false;
  const voice=new Voice(event=>{const s=sessions.get(event.id);if(!s)return;s.events.push({...event,seq:++s.seq});if(s.events.length>2048)s.events.shift();if(event.type==='done'){s.done=true;s.endedAt=Date.now();if(active===s.id)active=null}},directory);
  async function deliver(){
-  if(!webhook||delivering)return;delivering=true;
+  if(!push||delivering)return;delivering=true;
   try{while(true){
    const state=(await store.list()).find(s=>s.status==='queued');if(!state)break;
    await store.update(state.id,{status:'delivering',attempts:state.attempts+1});
    try{
-    const response=await fetch(webhook,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json','Idempotency-Key':state.id,...(webhookToken?{Authorization:'Bearer '+webhookToken}:{})},body:JSON.stringify(await store.bundle(state.id,{inline:true})),signal:AbortSignal.timeout(20000)});
+    let receipt;
+    if(submit)receipt=await submit(await store.bundle(state.id));
+    else {const response=await fetch(webhook,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json','Idempotency-Key':state.id,...(webhookToken?{Authorization:'Bearer '+webhookToken}:{})},body:JSON.stringify(await store.bundle(state.id,{inline:true})),signal:AbortSignal.timeout(20000)});
     if(!response.ok)throw Error('Receiver returned HTTP '+response.status);
-    const receipt=await response.json();if(receipt.submissionId!==state.id||typeof receipt.receiptId!=='string'||!receipt.receiptId)throw Error('Receiver did not acknowledge this submission');
+    receipt=await response.json();}
+    if(receipt?.submissionId!==state.id||typeof receipt.receiptId!=='string'||!receipt.receiptId)throw Error('Receiver did not acknowledge this submission');
     await store.update(state.id,{status:'delivered',deliveredAt:new Date().toISOString(),receiptId:receipt.receiptId,error:null});
    }catch(error){await store.update(state.id,{status:'failed',error:error.message})}
   }}finally{delivering=false}
@@ -30,11 +35,11 @@ function createServer({directory=DEFAULT_DIRECTORY,Voice=VoiceSession,voiceAvail
     const name=url.pathname==='/'?'index.html':url.pathname.slice(1);
     if(!/^[a-z0-9.-]+$/.test(name))return json(res,404,{error:'Not found'});
     const file=path.join(__dirname,'public',name);if(!fs.existsSync(file)||!fs.statSync(file).isFile())return json(res,404,{error:'Not found'});
-    let data=await fsp.readFile(file);if(name==='index.html')data=data.toString().replace('<!--CONFIG-->',`<meta name="study-voice-token" content="${token}"><script>window.serviceConfig=${JSON.stringify({voiceAvailable,mode:webhook?'webhook':'queue',project,preview}).replace(/</g,'\\u003c')}</script>`);
+    let data=await fsp.readFile(file);if(name==='index.html')data=data.toString().replace('<!--CONFIG-->',`<meta name="study-voice-token" content="${token}"><script>window.serviceConfig=${JSON.stringify({voiceAvailable,mode,project,preview}).replace(/</g,'\\u003c')}</script>`);
     res.writeHead(200,{'Content-Type':({'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.json':'application/json'})[path.extname(name)]||'application/octet-stream'});return res.end(data);
    }
    if(req.headers['x-study-token']!==token||(req.headers.origin&&!hosts.has(req.headers.origin.replace(/^http:\/\//,''))))return json(res,403,{error:'Invalid local session'});
-   if(req.method==='GET'&&url.pathname==='/api/status')return json(res,200,{mode:webhook?'webhook':'queue',voiceAvailable,project,submissions:(await store.list()).map(({requestHash,...state})=>state)});
+   if(req.method==='GET'&&url.pathname==='/api/status')return json(res,200,{mode,voiceAvailable,project,submissions:(await store.list()).map(({requestHash,...state})=>state)});
    if(req.method==='GET'&&url.pathname==='/api/voice/events'){
     const s=sessions.get(url.searchParams.get('id'));if(!s)return json(res,404,{error:'Dictation session ended'});s.lastPoll=Date.now();return json(res,200,{events:s.events.filter(e=>e.seq>(Number(url.searchParams.get('after'))||0)),done:s.done});
    }
@@ -47,7 +52,7 @@ function createServer({directory=DEFAULT_DIRECTORY,Voice=VoiceSession,voiceAvail
     await store.update(body.id,{status:'queued',error:null});json(res,202,{ok:true});deliver().catch(console.error);return;
    }
    if(url.pathname==='/api/claim'){
-    if(webhook||claiming)return json(res,409,{error:'Receiver is busy or webhook delivery is configured'});claiming=true;
+    if(push||claiming)return json(res,409,{error:'Receiver is busy or webhook delivery is configured'});claiming=true;
     try{const state=(await store.list()).find(s=>s.status==='queued'||s.status==='claimed'&&s.leaseUntil<Date.now());if(!state)return json(res,200,{submission:null});
      const claimToken=crypto.randomBytes(24).toString('hex');await store.update(state.id,{status:'claimed',claimToken,leaseUntil:Date.now()+300000});return json(res,200,{submission:await store.bundle(state.id),claimToken});
     }finally{claiming=false}

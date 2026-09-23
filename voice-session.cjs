@@ -5,7 +5,7 @@ class VoiceSession{
  start({id,locale}){
   if(this.child)throw Error('Finish the current dictation first.');if(typeof id!=='string'||! /^[0-9a-f-]{36}$/.test(id))throw Error('Invalid dictation session.');
   if(locale!==undefined&&(typeof locale!=='string'||! /^[a-z]{2,3}([-_][A-Za-z0-9]{2,8})*$/.test(locale)))throw Error('Invalid dictation language.');
-  const bundle=path.join(__dirname,'native/Open Layer Dictation.app');if(!fs.existsSync(bundle))throw Error('Build the dictation helper with npm run build:voice, then reopen Open Layer.');
+  const bundle=path.join(__dirname,'native/Live Annotation Dictation.app');if(!fs.existsSync(bundle))throw Error('Build the dictation helper with npm run build:voice, then reopen Live Annotation.');
   const dir=path.join(this.directory,id);fs.mkdirSync(dir,{recursive:true,mode:0o700});const events=path.join(dir,'events.jsonl'),control=path.join(dir,'control');fs.writeFileSync(events,'',{mode:0o600});fs.writeFileSync(control,'',{mode:0o600});
   const child=spawn('/usr/bin/open',['-n','-W',bundle,'--args',locale||'en-US','--events',events,'--control',control,'--parent',String(process.pid)],{stdio:'ignore'});
   this.session=id;this.child=child;this.control=control;let done=false,offset=0,pending='';const transcript=new SpeechTranscript();const send=event=>{if(event.type==='recognition'){const words=transcript.accept(event);this.emit({id,type:'words',words});return}if(event.type==='done')event={...event,words:transcript.words};this.emit({id,...event})};

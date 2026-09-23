@@ -3,6 +3,7 @@
  const project=window.serviceConfig?.project,preview=window.serviceConfig?.preview;
  const token=document.querySelector('meta[name="study-voice-token"]').content,storage='live-annotation-draft-v1'+(project?':'+project.id:'');
  let model;try{model=JSON.parse(localStorage.getItem(storage))}catch{}if(!model?.id)model={id:crypto.randomUUID(),name:'Live Annotation',layout:'current',text:'',images:[],notes:[],messages:[],nextImageNumber:1};
+ model.name='Live Annotation';
  const save=()=>localStorage.setItem(storage,JSON.stringify(model));
  const sidebar=document.createElement('iframe');sidebar.title='Voice and annotation composer';document.querySelector('.surface').append(sidebar);
  const assets=await(await fetch('sidebar-assets.json')).json();
@@ -75,7 +76,7 @@
  let previousStatus;
  async function refreshStatus(){
   try{const result=await api('status'),last=result.submissions.at(-1),label=document.querySelector('#delivery-status'),retry=document.querySelector('#retry');
-   label.textContent=!last?(result.mode==='webhook'?'Connected · submissions send immediately':'Ready · waiting for an agent receiver'):({queued:'Saved · waiting for an agent receiver',claimed:'Agent is receiving your prompt',delivering:'Sending to your agent…',delivered:'Delivered to your agent',failed:'Delivery failed · your prompt is saved'})[last.status];
+   label.textContent=!last?(result.mode!=='queue'?'Connected · submissions send immediately':'Ready · waiting for an agent receiver'):({queued:'Saved · waiting for an agent receiver',claimed:'Agent is receiving your prompt',delivering:'Sending to your agent…',delivered:'Delivered to your agent',failed:'Delivery failed · your prompt is saved'})[last.status];
    const statusKey=last?.id+':'+last?.status;if(statusKey!==previousStatus){previousStatus=statusKey;post({type:'live-delivery-status',text:label.textContent})}
    retry.hidden=last?.status!=='failed';retry.onclick=async()=>{try{await api('retry',{id:last.id});refreshStatus()}catch(error){label.textContent=error.message}};
   }catch{document.querySelector('#delivery-status').textContent='Local service disconnected · your draft is preserved'}

@@ -1,6 +1,6 @@
 const {execFileSync}=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
 function buildVoice(){
- const root=path.resolve(__dirname,'..'),native=path.join(root,'native'),bundle=path.join(native,'Open Layer Dictation.app/Contents'),binary=path.join(bundle,'MacOS/open-layer-dictation'),source=path.join(native,'voice-helper.swift'),plist=path.join(native,'voice-info.plist');
+ const root=path.resolve(__dirname,'..'),native=path.join(root,'native'),bundle=path.join(native,'Live Annotation Dictation.app/Contents'),binary=path.join(bundle,'MacOS/live-annotation-dictation'),source=path.join(native,'voice-helper.swift'),plist=path.join(native,'voice-info.plist');
  if(fs.existsSync(binary)&&fs.statSync(binary).mtimeMs>Math.max(fs.statSync(source).mtimeMs,fs.statSync(plist).mtimeMs))return binary;
  fs.mkdirSync(path.dirname(binary),{recursive:true});fs.copyFileSync(plist,path.join(bundle,'Info.plist'));
  const env={...process.env};if(fs.existsSync('/Library/Developer/CommandLineTools/usr/bin/swiftc'))env.DEVELOPER_DIR='/Library/Developer/CommandLineTools';

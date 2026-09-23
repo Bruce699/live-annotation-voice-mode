@@ -6,8 +6,10 @@ Use the current project's real development command and observed preview URL. The
 2. Start this skill's service with that URL and the current conversation identity:
 
    ```sh
-   node cli.cjs start --url http://localhost:3000/ --project "My project" --conversation "actual-task-id" --port 47832
+   "$CODEX_MCP_NODE_PATH" cli.cjs start --url http://localhost:3000/ --project "My project" --conversation "actual-task-id" --port 47832
    ```
+
+   This command is for Codex desktop and automatically delivers to the current task. For another host, use its Node runtime and add `--receiver URL`; manual queue mode requires explicit `--delivery queue`.
 
    Use the real task ID when the host supplies one; otherwise create and retain an explicit session name for this conversation. Do not reuse `default` across unrelated conversations. If the chosen port is occupied by a different session, choose another port. Do not stop somebody else's server.
 3. Open the printed **Live Annotation** URL in a browser panel. Use the full view for the interactive website; `?view=sidebar` deliberately hides the website. No screen-sharing picker is required for the integrated local preview. The browser/OS can still ask for dictation permission.

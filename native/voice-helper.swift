@@ -39,8 +39,8 @@ final class QuietInputGain {
 final class Dictation: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
  let inputGain = QuietInputGain()
  let capture = AVCaptureSession()
- let captureQueue = DispatchQueue(label: "open-layer.capture")
- let audioQueue = DispatchQueue(label: "open-layer.audio")
+ let captureQueue = DispatchQueue(label: "live-annotation.capture")
+ let audioQueue = DispatchQueue(label: "live-annotation.audio")
  var microphoneName = "microphone"
  var receivedAudio = false
  var receivedSpeech = false
@@ -169,7 +169,7 @@ if let control = argument("--control") {
 if eventFile != nil { _ = NSApplication.shared; NSApplication.shared.setActivationPolicy(.accessory) }
 emit(["type":"boot", "pid":ProcessInfo.processInfo.processIdentifier])
 SFSpeechRecognizer.requestAuthorization { status in
- guard status == .authorized else { emit(["type":"error", "message":"Allow Speech Recognition for Open Layer in macOS Privacy & Security."]); exit(1) }
+ guard status == .authorized else { emit(["type":"error", "message":"Allow Speech Recognition for Live Annotation in macOS Privacy & Security."]); exit(1) }
  if let file = argument("--stream-file") { DispatchQueue.main.async { dictation.startFile(URL(fileURLWithPath: file)) }; return }
  if let flag = CommandLine.arguments.firstIndex(of: "--file"), flag + 1 < CommandLine.arguments.count {
   guard recognizer?.supportsOnDeviceRecognition == true else { emit(["type":"error", "message":"On-device recognition unavailable"]); exit(1) }
@@ -182,7 +182,7 @@ SFSpeechRecognizer.requestAuthorization { status in
  }
  emit(["type":"permission", "message":"Waiting for microphone access…"])
  AVCaptureDevice.requestAccess(for: .audio) { allowed in
-  DispatchQueue.main.async { if allowed { dictation.start() } else { dictation.fail("Allow Microphone access for Open Layer in macOS Privacy & Security.") } }
+  DispatchQueue.main.async { if allowed { dictation.start() } else { dictation.fail("Allow Microphone access for Live Annotation in macOS Privacy & Security.") } }
  }
 }
 if eventFile != nil { NSApplication.shared.run() } else { RunLoop.main.run() }

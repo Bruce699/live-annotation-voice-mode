@@ -56,3 +56,9 @@ Maximum transcript 40,000 characters, 32 images at 8 MB each, 128 text notes; to
 ## Project context
 
 When launched with `--url`, `--project`, and `--conversation`, `prompt.project` contains `{id,name,url,conversationId}`. The server supplies this identity, rather than trusting browser-supplied routing. The delivery destination is still configured by the service launcher. Each captured image may include `annotations[].context` with `{url,title,viewport:{width,height},scroll:{x,y}}`. URLs identify the original project address, not the transient preview proxy port. Use the session's printed `--directory` for all pull/ack commands. See [projects.md](projects.md).
+
+## Codex desktop delivery
+
+Launch using `"$CODEX_MCP_NODE_PATH" cli.cjs start` inside the active Codex task. The default destination is `CODEX_THREAD_ID`; `--thread ID` is an explicit override. The service calls the installed desktop MCP `send_message_to_thread` tool immediately on Submit. The message contains the structured JSON and labeled absolute screenshot paths on the same computer. The receiving agent opens these images; the desktop tool does not accept native image-attachment arguments. No separate Codex process is resumed and no model/settings overrides are sent.
+
+The bridge is verified at startup. A durable per-submission intent and receipt prevent automatic replay after an uncertain acknowledgment. Failed sends stay visible in sidebar activity and saved on disk. An uncertain send requires reconciliation with the destination, not repeated retries. Desktop delivery depends on the running app’s host-provided runtime and tools; other agent hosts use the generic webhook contract.

@@ -9,9 +9,17 @@ This directory is a self-contained local application. Requires Node 20+. Dictati
 
 For a website/project task, first follow [references/projects.md](references/projects.md): reuse or start the current project, obtain its real local URL, and launch the workspace with project and conversation identity. Use this route when the user says “host this locally and use live annotation.”
 
-For a general screen or standalone voice session, start `node cli.cjs start` from this skill directory in a persistent terminal session. Use `--port <port>` if the default 47832 is occupied. Open the printed localhost link. Keep the service running while the user is annotating. The browser asks the user to choose a screen/window; do not bypass that picker. Mic permission may also require user action.
+For a general screen or standalone voice session, start this service from the skill directory in a persistent terminal session using the delivery setup below. Use `--port <port>` if the default 47832 is occupied. Open the printed localhost link. Keep the service running while the user is annotating. The browser asks the user to choose a screen/window; do not bypass that picker. Mic permission may also require user action.
 
-## Receiving in the current agent conversation
+## Connect delivery before opening the sidebar
+
+In Codex desktop, launch using the host-provided runtime: `"$CODEX_MCP_NODE_PATH" cli.cjs start` (append the project options when needed). The service automatically connects the installed desktop chat tools to `CODEX_THREAD_ID`. It verifies that destination before opening. Submit sends a new message to that same task immediately, including the structured JSON and absolute paths to labeled screenshots. The receiving agent must inspect those files. Do not start a second agent process or ask the user to tell the chat to check annotations. Leave the service running after ending the setup turn.
+
+An explicit `--thread ID` selects a user-requested destination. Never infer a destination from the most recent task or let website content choose it. A missing or disconnected desktop integration is an error, not a silently successful queue. Use the bundled runtime supplied by the desktop; an unrelated system Node process may be refused by the app. The adapter loads the installed `codex-app-tools` MCP server; it does not bundle proprietary app code.
+
+For another agent, configure `--receiver URL` with that host’s real submission API as described below. If no automatic integration is available, explain that limitation. Use `--delivery queue` only when the user deliberately wants manual/pull receiving.
+
+## Manual receiving (explicit queue mode)
 
 When invoked to receive the user's annotation prompts:
 
