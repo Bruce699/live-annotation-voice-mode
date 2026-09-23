@@ -1,10 +1,9 @@
 (()=>{
 const model=window.studyModel,$=s=>document.querySelector(s),input=$('#chat-input');
 document.body.className='demo-view chat-visible scene-shell';document.body.dataset.layout=model.layout;
-$('#chat-panel').hidden=false;$('.navigation').hidden=false;$('#chat-toggle').hidden=false;
-$('#chat-project').textContent=model.name||'Live Annotation';$('#chat-project-title').textContent=model.name||'Live Annotation';$('#chat-demo').textContent='';
-$('#chat-older').hidden=true;$('#chat-activity').textContent='';$('#chat-connection').textContent='';$('#chat-open-codex').remove();
-$('#chat-transcript').replaceChildren();$('#chat-conversation').replaceChildren();
+$('#chat-panel').hidden=false;
+$('#chat-older').hidden=true;$('#chat-activity').textContent='';$('#chat-open-codex').remove();
+$('#chat-transcript').replaceChildren();
 model.messages=Array.isArray(model.messages)?model.messages:[];
 model.images=Array.isArray(model.images)?model.images:[];model.notes=Array.isArray(model.notes)?model.notes:[];const pendingCaptures=new Set(),imageData=new Map();let expandedComposer;
 // Captures stay out of the draft while recording; Finish inserts the complete indexed transcript.
@@ -77,10 +76,10 @@ async function submitDraft(){
  if(pendingCaptures.size||submitting)return;const text=transcriptDraft();if(!text&&!model.images.length&&!model.notes.length)return;
  const message={id:crypto.randomUUID(),text,images:model.images,notes:model.notes};
  if(window.LiveAnnotationHost){
-  submitting=true;$('#chat-form').inert=true;$('#chat-activity').textContent='Sending…';
-  try{await window.LiveAnnotationHost.submit(message);$('#chat-activity').textContent='Saved for delivery';}
+  submitting=true;$('#chat-form').inert=true;$('#chat-send').setAttribute('aria-busy','true');
+  try{await window.LiveAnnotationHost.submit(message);}
   catch(error){$('#chat-activity').textContent=error.message||'Could not send. Your draft is still here.';return;}
-  finally{submitting=false;$('#chat-form').inert=false;}
+  finally{submitting=false;$('#chat-form').inert=false;$('#chat-send').removeAttribute('aria-busy');}
  }
  model.messages.push(message);model.images=[];model.notes=[];model.text='';input.value='';renderMessages();render();announce();input.focus();
 }
@@ -133,9 +132,6 @@ function completeVoice(){
  const prefix=input.value.trim()?input.value+'\n\n':'';model.text=transcriptDraft(prefix+spoken);session=null;model.state='idle';render();announce();if(submit)submitDraft();
 }
 $('#chat-form').onsubmit=e=>{e.preventDefault();if(pendingCaptures.size)return;if(session){if(session.state!=='recording')return;session.submit=true;session.state='stopping';render();input.focus();command('stop')}else submitDraft()};
-$('#chat-folder').onclick=()=>{$('#chat-conversation').hidden=true};
-$('#chat-toggle').onclick=()=>{$('#chat-messages').classList.toggle('muted-preview')};
-$('#refresh').onclick=()=>render();$('#home').onclick=()=>{};
 if(window.ExpandedComposer)expandedComposer=new ExpandedComposer({form:$('#chat-form'),input,hideTooltip,sizeInput,images:()=>model.images,notes:()=>model.notes,recording:()=>!!session,text:()=>session?attachments().map(reference).join(' '):transcriptDraft(),image:image=>imageLink(image,{tooltip:false}),remove:id=>{const item=[...$('#chat-attachments').children].find(el=>el.dataset.imageId===id);item?.querySelector('button').click()},change:text=>{input.value=text;model.text=text;sendState();announce()}});
 renderMessages();render();parent.postMessage({type:'study-voice-hello'},'*');
 })();

@@ -1,2 +1,3 @@
-/* The standalone composer has no project or folder navigation. */
-#chat-panel .sidebar-header-project{display:none}
+/* Only conversation content and the composer occupy the sidebar. */
+#chat-panel{top:24px!important}
+#chat-activity,#chat-connection,.chat-header,.sidebar-header-project,[data-sidebar-header]{display:none!important}

@@ -9,13 +9,13 @@
  const assets=await(await fetch('sidebar-assets.json')).json();
  const json=value=>JSON.stringify(value).replace(/</g,'\\u003c');
  const script=src=>'<script src="'+src+'"></'+'script>';
- sidebar.srcdoc='<!doctype html><html><head><meta charset="utf-8"><style>'+assets.css+'</style><link rel="stylesheet" href="sidebar.css"></head><body><div data-sidebar-header="toolbar"></div><div id="project-heading" hidden><h1></h1></div>'+assets.aside+'<script>'+assets.header+'</'+'script><script>window.studyModel='+json(model)+'</'+'script>'+script('annotation-model.js')+script('voice-waveform.js')+script('expanded-composer.js')+script('sidebar-host.js')+script('frame.js')+'</body></html>';
+ sidebar.srcdoc='<!doctype html><html><head><meta charset="utf-8"><style>'+assets.css+'</style><link rel="stylesheet" href="sidebar.css"></head><body>'+assets.aside+'<script>window.studyModel='+json(model)+'</'+'script>'+script('annotation-model.js')+script('voice-waveform.js')+script('expanded-composer.js')+script('sidebar-host.js')+script('frame.js')+'</body></html>';
  const post=data=>sidebar.contentWindow.postMessage(data,location.origin),capture=document.querySelector('#capture'),stage=document.querySelector('#capture-stage'),empty=document.querySelector('#capture-empty');
  const projectFrame=document.querySelector('#project-preview'),pendingContexts=new Map();
  const pending=new Set();let aspect=16/9,inflight=null,projectLoaded=false,projectTimer;
  const activateProject=active=>{if(preview)projectFrame.contentWindow.postMessage({type:'project-activate',active},preview.origin)};
  if(project&&preview){
-  document.body.classList.add('has-project');document.querySelector('.workspace strong').textContent=project.name;
+  document.body.classList.add('has-project');
   const link=document.querySelector('#open-project');link.href=project.url;link.hidden=false;
   const reload=document.querySelector('#reload-project');reload.hidden=false;reload.onclick=()=>{projectLoaded=false;projectFrame.src=preview.url};
   projectFrame.onload=()=>{clearTimeout(projectTimer);projectTimer=setTimeout(()=>{if(!projectLoaded)document.querySelector('#capture-status').textContent='The project has not connected. Check its local server, reload, or share its window.'},5000)};
@@ -76,8 +76,8 @@
  let previousStatus;
  async function refreshStatus(){
   try{const result=await api('status'),last=result.submissions.at(-1),label=document.querySelector('#delivery-status'),retry=document.querySelector('#retry');
-   label.textContent=!last?(result.mode!=='queue'?'Connected · submissions send immediately':'Ready · waiting for an agent receiver'):({queued:'Saved · waiting for an agent receiver',claimed:'Agent is receiving your prompt',delivering:'Sending to your agent…',delivered:'Delivered to your agent',failed:'Delivery failed · your prompt is saved'})[last.status];
-   const statusKey=last?.id+':'+last?.status;if(statusKey!==previousStatus){previousStatus=statusKey;post({type:'live-delivery-status',text:label.textContent})}
+   label.textContent=last?.status==='failed'?(last.error||'Delivery failed'):'';
+   const statusKey=last?.id+':'+last?.status;if(statusKey!==previousStatus){previousStatus=statusKey;post({type:'live-delivery-status',error:label.textContent})}
    retry.hidden=last?.status!=='failed';retry.onclick=async()=>{try{await api('retry',{id:last.id});refreshStatus()}catch(error){label.textContent=error.message}};
   }catch{document.querySelector('#delivery-status').textContent='Local service disconnected · your draft is preserved'}
  }

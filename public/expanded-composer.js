@@ -36,7 +36,7 @@
   }
   targetRect(){
    const panel=this.form.closest('#chat-panel').getBoundingClientRect(),toolbar=document.querySelector('.toolbar')?.getBoundingClientRect();
-   const top=toolbar?.bottom||64;
+   const top=toolbar?.bottom||panel.top;
    return {left:panel.left,top,width:panel.width,height:Math.max(180,window.innerHeight-top)};
   }
   place(rect){
