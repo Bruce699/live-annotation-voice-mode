@@ -60,6 +60,12 @@ Each project/conversation has separate drafts and submissions. The local proxy a
 
 For other apps, start without `--url`, open the full workspace in Chrome, and use **Share a window** to select the source. Browser/OS permission pickers require the user's interaction. For a composer-only browser panel, open the printed URL with `?view=sidebar`; add screenshots using **+**.
 
+## Appearance and composer
+
+The workspace automatically follows the browser's system color preference and updates when that preference changes, without a reload or saved theme override. Dark mode uses charcoal surfaces, light text, and quieter borders across the sidebar, expanded input, voice controls, screenshot shelf, and annotation toolbar. The embedded project's own colors remain under that project's control.
+
+When the draft is ready to send, the submit button is filled black in light mode and light in dark mode. An empty draft remains neutral; pending captures and voice transitions still disable submission. The expanded input's collapse handle sits 24px below the top of the sidebar, including after resizing. See [the theme and composer change report](docs/THEME-AND-COMPOSER.md) for the design, implementation, and checks.
+
 ## Delivery and troubleshooting
 
 The service tracks queued, delivering, delivered, and failed submissions. A saved bundle is not reported as a delivered message. Acknowledgment means the host accepted the prompt; it does not mean the agent finished the requested work. Failed or uncertain submissions remain on disk. Check the destination before retrying an uncertain delivery.
@@ -91,7 +97,7 @@ Local captures use a bundled DOM renderer with modern CSS color support. They ma
 
 ## Development
 
-No npm runtime dependencies. For development, install the package's dev dependencies and Playwright's Chromium (`npx playwright install chromium`), then run `npm test` and `npm run test:browser`. Version 0.3.1 passed **38 unit/server/setup/adapter tests and 13 Chromium browser tests**, including capture pixels, browser zoom, reload/persistence, recovery, and ordered submission with matching PNG bytes through a controlled receiver. The Codex connection was verified through a read-only destination check; no real chat test message was sent.
+No npm runtime dependencies. For development, install the package's dev dependencies and Playwright's Chromium (`npx playwright install chromium`), then run `npm test` and `npm run test:browser`. Version 0.3.2 passed **38 unit/server/setup/adapter tests and 17 Chromium browser tests**. Four browser tests cover automatic theme changes, submit states, the 24px collapse handle inset, and pending capture behavior. The existing tests cover capture pixels, browser zoom, reload/persistence, recovery, and ordered submission with matching PNG bytes through a controlled receiver. Appearance checks sent no real chat message. See [the theme report](docs/THEME-AND-COMPOSER.md) for visual evidence.
 
 The frontend, screenshot renderer, and voice sources are included in the package. A clean installation of the 52-file version 0.3.1 tarball passed doctor against the current Codex task using the host runtime, then completed browser capture and verified delivery to an isolated test receiver through the installed CLI. Use `npm pack --dry-run` to inspect distribution contents.
 

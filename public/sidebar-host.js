@@ -13,7 +13,7 @@
  window.addEventListener('DOMContentLoaded',()=>{
   document.querySelector('#chat-panel').setAttribute('aria-label','Live annotation conversation');
   document.querySelector('label[for="chat-input"]').textContent='Message your agent';
-  const status=document.createElement('p');status.id='live-delivery-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.style.cssText='font-size:12px;line-height:1.4;margin:6px 0;overflow-wrap:anywhere;color:#62626b';document.querySelector('#chat-form').before(status);
+  const status=document.createElement('p');status.id='live-delivery-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.style.cssText='font-size:12px;line-height:1.4;margin:6px 0;overflow-wrap:anywhere';document.querySelector('#chat-form').before(status);
   const retry=document.createElement('button');retry.type='button';retry.id='live-delivery-retry';retry.textContent='Retry delivery';retry.hidden=true;retry.style.cssText='font:inherit;font-size:12px;margin-bottom:6px';retry.onclick=()=>parent.postMessage({type:'live-retry'},parent.location.origin);status.after(retry);
   const picker=document.querySelector('#chat-image-picker'),attach=document.querySelector('#chat-attach');picker.accept='image/png,image/jpeg,image/webp';
   const configure=()=>{attach.disabled=false;attach.title='Add screenshots';document.querySelector('#chat-send').title=deliveryError||'Send'};

@@ -7,3 +7,12 @@ body.sidebar-only main{width:min(100%,420px);margin-inline:auto}
 body.has-project .workspace>header,body.has-project .workspace>footer{display:none}
 .workspace-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;padding:0 2px 8px}.workspace-actions button,.workspace-actions a{font-size:12px;padding:6px 9px}.workspace-actions a{color:inherit}.workspace-actions #delivery-status{margin-right:auto;max-width:100%;overflow-wrap:anywhere}.workspace-actions #delivery-status:empty{display:none}
 #capture-status{display:block;flex:none;padding:8px 12px;color:#65656f;font-size:12px;line-height:1.5}#capture-status:empty{display:none}
+body{background:var(--la-canvas);color:var(--la-text)}
+.frame{background:var(--la-sidebar)}
+#capture-stage{background:var(--la-stage);border-color:var(--la-border)}
+#capture,#project-preview{background:var(--la-stage)}
+button{background:var(--la-surface);color:var(--la-text);border-color:var(--la-border)}
+button:hover{background:var(--la-control-hover)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--la-focus);outline-offset:3px}
+.workspace p,footer,#capture-status,#capture-empty{color:var(--la-muted)}
+#delivery-status:not(:empty){color:var(--la-error-text);background:var(--la-error);border-radius:8px;padding:6px 9px}

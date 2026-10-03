@@ -36,8 +36,12 @@
   }
   targetRect(){
    const panel=this.form.closest('#chat-panel').getBoundingClientRect(),toolbar=document.querySelector('.toolbar')?.getBoundingClientRect();
-   const top=toolbar?.bottom||panel.top;
-   return {left:panel.left,top,width:panel.width,height:Math.max(180,window.innerHeight-top)};
+   const style=getComputedStyle(this.form),inset=parseFloat(style.getPropertyValue('--la-sidebar-inset'))||24;
+   // The tab protrudes above the form. Keep its visible top 24px inside the
+   // sidebar viewport, accounting for its offset and the form's border.
+   const tabOffset=(parseFloat(getComputedStyle(this.button).top)||0)+(parseFloat(style.borderTopWidth)||0);
+   const top=Math.max(inset,toolbar?.bottom||0)-tabOffset;
+   return {left:panel.left,top,width:panel.width,height:Math.max(0,panel.bottom-top)};
   }
   place(rect){
    const panel=this.form.closest('#chat-panel').getBoundingClientRect();

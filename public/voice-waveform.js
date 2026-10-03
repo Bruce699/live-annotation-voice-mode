@@ -47,7 +47,7 @@
     const p=points[i],style=waveStyle(p.level,Math.round((p.x+motion/STEP*PITCH)/pitch),height,this.style),h=p.marker?height-2:this.barWidth+(style.height-3)*(height-this.barWidth-4)/(height-7);
     let bar=this.bars[i];if(!bar){bar=document.createElementNS('http://www.w3.org/2000/svg','rect');bar.setAttribute('fill','#64646c');this.svg.append(bar);this.bars.push(bar)}
     bar.setAttribute('x',p.x-this.barWidth/2);bar.setAttribute('y',(height-h)/2);bar.setAttribute('width',this.barWidth);bar.setAttribute('height',h);bar.setAttribute('rx',this.barWidth/2);const fadeWidth=width*.18,leftFade=Math.max(0,Math.min(1,p.x/fadeWidth)),rightFade=Math.max(0,Math.min(1,(width-p.x)/fadeWidth));
-    bar.setAttribute('opacity',(p.marker?1:style.alpha)*leftFade*rightFade);bar.setAttribute('fill',p.marker==='note'?'#3478f6':p.marker==='laser'?'#ff203c':p.marker==='rectangle'?'#ff8523':'#64646c');
+    bar.setAttribute('opacity',(p.marker?1:style.alpha)*leftFade*rightFade);bar.setAttribute('fill',p.marker==='note'?'var(--la-note-accent, #3478f6)':p.marker==='laser'?'#ff203c':p.marker==='rectangle'?'#ff8523':'var(--la-wave, #64646c)');
    }
    if(this.running)this.frame=requestAnimationFrame(()=>this.paint());
   }

@@ -1,0 +1,59 @@
+/* Native preference, no saved override: updates immediately when the OS/browser changes. */
+:root {
+ color-scheme: light dark;
+ --la-sidebar-inset: 24px;
+ --la-canvas: #e9e9eb;
+ --la-sidebar: #f1f1f1;
+ --la-stage: #f4f4f5;
+ --la-surface: #ffffff;
+ --la-control: #f1f1f3;
+ --la-control-hover: #e7e7eb;
+ --la-border: #dedee2;
+ --la-text: #24242a;
+ --la-muted: #65656f;
+ --la-placeholder: #767680;
+ --la-icon: #6b6b73;
+ --la-disabled: #9a9aa3;
+ --la-send: #080808;
+ --la-send-icon: #ffffff;
+ --la-bubble: #080808;
+ --la-bubble-text: #ffffff;
+ --la-quote: #f4f5f8;
+ --la-link: #2465dc;
+ --la-note: #edf4ff;
+ --la-note-accent: #3478f6;
+ --la-error: #fff3e7;
+ --la-error-text: #8d4511;
+ --la-focus: #62626e;
+ --la-wave: #64646c;
+ --la-shadow: 0 2px 12px rgb(0 0 0 / .035);
+}
+@media (prefers-color-scheme: dark) {
+ :root {
+  --la-canvas: #18191b;
+  --la-sidebar: #1f2023;
+  --la-stage: #202125;
+  --la-surface: #292a2e;
+  --la-control: #35363c;
+  --la-control-hover: #42434a;
+  --la-border: #3c3d44;
+  --la-text: #f2f2f4;
+  --la-muted: #b1b1ba;
+  --la-placeholder: #a0a0aa;
+  --la-icon: #bfc0ca;
+  --la-disabled: #797a86;
+  --la-send: #f2f2f4;
+  --la-send-icon: #18191b;
+  --la-bubble: #3a3b41;
+  --la-bubble-text: #f2f2f4;
+  --la-quote: #32333a;
+  --la-link: #94baff;
+  --la-note: #263750;
+  --la-note-accent: #8bb5ff;
+  --la-error: #392b1e;
+  --la-error-text: #ffc48c;
+  --la-focus: #b9bbc8;
+  --la-wave: #c0c1cb;
+  --la-shadow: 0 2px 12px rgb(0 0 0 / .16);
+ }
+}

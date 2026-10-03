@@ -1,6 +1,6 @@
 {
   "name": "live-annotation-sidebar",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Local voice and screenshot annotation sidebar with structured agent submissions",
   "private": true,
   "license": "UNLICENSED",

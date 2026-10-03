@@ -1,5 +1,49 @@
 /* Only conversation content and the composer occupy the sidebar. */
-#chat-panel{top:24px!important}
+body #chat-panel,body[data-layout] #chat-panel{top:var(--la-sidebar-inset)!important}
 #chat-connection,.chat-header,.sidebar-header-project,[data-sidebar-header]{display:none!important}
 #chat-activity:empty{display:none!important}
-#chat-activity:not(:empty){display:block!important;max-height:none;overflow:visible;flex:none;margin:8px 0;padding:8px 10px;border-radius:8px;background:#fff3e7;color:#8d4511;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+#chat-activity:not(:empty){display:block!important;max-height:none;overflow:visible;flex:none;margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--la-error);color:var(--la-error-text);font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+
+html,body,body.scene-shell{background:var(--la-sidebar);color:var(--la-text)}
+body.scene-shell #chat-panel{background:var(--la-sidebar);color:var(--la-text);border-color:var(--la-border)}
+#chat-form{background:var(--la-surface);border-color:var(--la-surface);--composer-icon:var(--la-icon);--composer-button:var(--la-control);filter:drop-shadow(var(--la-shadow))}
+#chat-panel.image-drop #chat-form{background:var(--la-control);border-color:var(--la-focus)}
+#chat-form #chat-input,#composer-document{color:var(--la-text);caret-color:var(--la-text)}
+#chat-input::placeholder,.composer-paragraph-empty:empty::before{color:var(--la-placeholder)}
+
+/* Outrank the exported sidebar's neutral button overrides. Readiness remains the
+   existing disabled state, including attachment-only and recording submissions. */
+#chat-form #chat-send:not(:disabled){background:var(--la-send);color:var(--la-send-icon);opacity:1;cursor:pointer}
+#chat-form #chat-send:disabled{background:var(--la-control);color:var(--la-disabled);opacity:1;cursor:default}
+#chat-form :is(#chat-attach,#chat-voice,#voice-cancel,#voice-finish):hover:not(:disabled){background:var(--la-control-hover)}
+#chat-form :is(#chat-attach,#chat-voice,#voice-cancel,#voice-finish):disabled{color:var(--la-disabled);cursor:default}
+#chat-panel button:focus-visible,#chat-panel select:focus-visible{outline:2px solid var(--la-focus);outline-offset:3px}
+#chat-panel #composer-expand:focus-visible .composer-tab-icon{outline:2px solid var(--la-focus);outline-offset:3px;border-radius:3px}
+
+.chat-message.user{background:var(--la-bubble);color:var(--la-bubble-text)}
+.chat-message.assistant{color:var(--la-text)}
+.chat-message details summary{color:var(--la-muted)}
+.chat-message.assistant :is(code,pre){background:var(--la-control)}
+.chat-history::before{background:linear-gradient(to bottom,var(--la-sidebar),transparent)}
+.chat-history::after{background:linear-gradient(to top,var(--la-sidebar),transparent)}
+.study-capture-shelf::before{background:linear-gradient(to right,var(--la-surface),transparent)}
+.study-capture-shelf::after{background:linear-gradient(to left,var(--la-surface),transparent)}
+.study-capture-image,.chat-attachment img{background:var(--la-control)}
+.study-capture-thumb>button,.composer-inline-remove,.chat-attachment button{border-color:var(--la-surface);background:var(--la-control-hover);color:var(--la-text)}
+.study-note-tile{background:var(--la-note);color:var(--la-note-accent);border-color:var(--la-note-accent)}
+.study-note-tile:focus-visible{outline-color:var(--la-note-accent)}
+.composer-tab-shape{fill:var(--la-surface)}
+#composer-expand{color:var(--la-icon)}
+#composer-expand:hover,#composer-expand:focus-visible{color:var(--la-text)}
+#composer-document .study-capture-image::after{border-color:var(--la-border)}
+#composer-document blockquote{background:var(--la-quote);color:var(--la-text)}
+#composer-document blockquote a{color:var(--la-link)}
+#composer-document blockquote::before{background:var(--la-note-accent)}
+#composer-map .composer-map-mark[data-kind=text]{color:var(--la-disabled)}
+#composer-map .composer-map-mark[data-kind=text]:is([aria-current],:hover){color:var(--la-text)}
+#composer-map .composer-map-mark[data-kind=note]{color:var(--la-note-accent)}
+#voice-status,#voice-transcribing,#live-delivery-status{color:var(--la-muted)}
+#live-delivery-status:empty{display:none}
+#live-delivery-status[data-error=true]{color:var(--la-error-text);background:var(--la-error);padding:8px 10px;border-radius:8px}
+#live-delivery-retry{background:var(--la-control);color:var(--la-text);border:1px solid var(--la-border);border-radius:8px;padding:6px 10px;cursor:pointer}
+#live-delivery-retry:hover{background:var(--la-control-hover)}

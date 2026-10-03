@@ -10,7 +10,7 @@
  const assets=await(await fetch('sidebar-assets.json')).json();
  const json=value=>JSON.stringify(value).replace(/</g,'\\u003c');
  const script=src=>'<script src="'+src+'"></'+'script>';
- sidebar.srcdoc='<!doctype html><html><head><meta charset="utf-8"><style>'+assets.css+'</style><link rel="stylesheet" href="sidebar.css"></head><body>'+assets.aside+'<script>window.studyModel='+json(model)+'</'+'script>'+script('annotation-model.js')+script('voice-waveform.js')+script('expanded-composer.js')+script('sidebar-host.js')+script('frame.js')+'</body></html>';
+ sidebar.srcdoc='<!doctype html><html><head><meta charset="utf-8"><meta name="color-scheme" content="light dark"><style>'+assets.css+'</style><link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="sidebar.css"></head><body>'+assets.aside+'<script>window.studyModel='+json(model)+'</'+'script>'+script('annotation-model.js')+script('voice-waveform.js')+script('expanded-composer.js')+script('sidebar-host.js')+script('frame.js')+'</body></html>';
  const post=data=>sidebar.contentWindow.postMessage(data,location.origin),capture=document.querySelector('#capture'),stage=document.querySelector('#capture-stage'),empty=document.querySelector('#capture-empty');
  const projectFrame=document.querySelector('#project-preview'),pendingContexts=new Map();
  const pending=new Set();let aspect=16/9,inflight=null,projectLoaded=false,projectTimer;
