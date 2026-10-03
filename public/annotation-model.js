@@ -1,6 +1,14 @@
 // Shared by the overlay, draft timeline and isolated tests.
 (function(root){
  function rectangle(a,b){return {x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),width:Math.abs(a.x-b.x),height:Math.abs(a.y-b.y)}}
+ // Pointer positions are viewport CSS pixels; image dimensions are bitmap pixels.
+ // Round both edges so fractional zoom never moves or enlarges the selected area.
+ function cropRectangle(rect,viewport,bitmap){
+  const sx=bitmap.width/viewport.width,sy=bitmap.height/viewport.height;
+  const x=Math.max(0,Math.min(bitmap.width,Math.round(rect.x*sx))),y=Math.max(0,Math.min(bitmap.height,Math.round(rect.y*sy)));
+  const right=Math.max(x,Math.min(bitmap.width,Math.round((rect.x+rect.width)*sx))),bottom=Math.max(y,Math.min(bitmap.height,Math.round((rect.y+rect.height)*sy)));
+  return {x,y,width:right-x,height:bottom-y};
+ }
  function opacity(age){return Math.max(0,Math.min(1,1-(age-650)/900))}
  function timeline(words,marks){
   const events=[...words.map((word,index)=>({...word,at:word.end,index,kind:'word'})),...marks.map((mark,index)=>({...mark,at:mark.time,index,kind:mark.kind==='note'?'note':'image'}))].sort((a,b)=>a.at-b.at||(a.kind==='word'?-1:1));
@@ -15,5 +23,5 @@
    ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#ff203c';ctx.shadowColor='#ff1738';ctx.shadowBlur=13;ctx.lineWidth=7;line();ctx.shadowBlur=5;ctx.lineWidth=4;line();ctx.shadowBlur=0;ctx.strokeStyle='#fff7f5';ctx.lineWidth=1.8;line();
   }ctx.restore();
  }
- const api={rectangle,opacity,timeline,nextNumber,draw};if(typeof module==='object')module.exports=api;else root.AnnotationModel=api;
+ const api={rectangle,cropRectangle,opacity,timeline,nextNumber,draw};if(typeof module==='object')module.exports=api;else root.AnnotationModel=api;
 })(globalThis);

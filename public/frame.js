@@ -75,9 +75,10 @@ let submitting=false;
 async function submitDraft(){
  if(pendingCaptures.size||submitting)return;const text=transcriptDraft();if(!text&&!model.images.length&&!model.notes.length)return;
  const message={id:crypto.randomUUID(),text,images:model.images,notes:model.notes};
+ if(!window.LiveAnnotationHost){$('#chat-activity').textContent='The chat connection did not load. Reload the sidebar; your draft is preserved.';return}
  if(window.LiveAnnotationHost){
   submitting=true;$('#chat-form').inert=true;$('#chat-send').setAttribute('aria-busy','true');
-  try{await window.LiveAnnotationHost.submit(message);}
+  try{const receipt=await window.LiveAnnotationHost.submit(message);if(receipt?.id)message.id=receipt.id;$('#chat-activity').textContent='';}
   catch(error){$('#chat-activity').textContent=error.message||'Could not send. Your draft is still here.';return;}
   finally{submitting=false;$('#chat-form').inert=false;$('#chat-send').removeAttribute('aria-busy');}
  }
@@ -108,12 +109,13 @@ window.addEventListener('message',e=>{
  if(e.data?.type==='study-capture-pending'){pendingCaptures.add(e.data.id);sendState();return}
  if(e.data?.type==='study-capture-cancel'||e.data?.type==='study-capture-error'){pendingCaptures.delete(e.data.id);if(e.data.message)$('#chat-activity').textContent=e.data.message;sendState();completeVoice();return}
  if(e.data?.type==='study-capture'){
-  const image=e.data.image;$('#chat-activity').textContent='';pendingCaptures.delete(image.id);imageData.set(image.id,image.data);const {data,...metadata}=image;metadata.addedAt=Date.now();model.images.push(metadata);
+  const image=e.data.image;if(!pendingCaptures.has(image?.id))return;$('#chat-activity').textContent='';pendingCaptures.delete(image.id);imageData.set(image.id,image.data);const {data,...metadata}=image;metadata.addedAt=Date.now();model.images.push(metadata);
   if(session)session.marks.push({number:image.number,time:Math.max(0,(image.time-session.startedAt)/1000)});
   else metadata.offset=input.selectionStart??input.value.length;
   renderImages(image.id);sizeInput();sendState();announce();completeVoice();return;
  }
  if(e.data?.type==='study-image-data'){imageData.set(e.data.id,e.data.data);for(const link of document.querySelectorAll('.study-capture-image'))if(link.dataset.imageId===e.data.id){link.href=e.data.data;link.querySelector('img').src=e.data.data}return}
+ if(e.data?.type==='study-image-error'){imageData.delete(e.data.id);$('#chat-activity').textContent=e.data.message;for(const link of document.querySelectorAll('.study-capture-image'))if(link.dataset.imageId===e.data.id){link.removeAttribute('href');link.title=e.data.message;link.querySelector('img').alt='Screenshot unavailable — remove and recapture'}return}
  if(e.data?.type==='study-rail-settings'){expandedComposer?.setMapSettings(e.data.settings);return}
  if(e.data?.type==='study-wave-settings'){wave.setSpeed(e.data.speed);wave.setGeometry(e.data.barWidth,e.data.gap);return}
  if(e.data?.type==='study-voice-capability'){available=e.data.available===true;render();return}

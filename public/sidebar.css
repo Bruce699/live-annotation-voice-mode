@@ -1,3 +1,5 @@
 /* Only conversation content and the composer occupy the sidebar. */
 #chat-panel{top:24px!important}
-#chat-activity,#chat-connection,.chat-header,.sidebar-header-project,[data-sidebar-header]{display:none!important}
+#chat-connection,.chat-header,.sidebar-header-project,[data-sidebar-header]{display:none!important}
+#chat-activity:empty{display:none!important}
+#chat-activity:not(:empty){display:block!important;max-height:none;overflow:visible;flex:none;margin:8px 0;padding:8px 10px;border-radius:8px;background:#fff3e7;color:#8d4511;font-size:12px;line-height:1.5;overflow-wrap:anywhere}

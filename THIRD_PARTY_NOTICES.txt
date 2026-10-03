@@ -200,3 +200,12 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+Bundled browser screenshot renderer
+----------------------------------
+public/html2canvas.min.js is the unmodified html2canvas-pro 2.5.0 browser build.
+Source: https://github.com/yorickshan/html2canvas-pro
+License: MIT; see HTML2CANVAS-PRO-LICENSE.txt and HTML2CANVAS-LICENSE.txt
+for the fork and original html2canvas copyright notices.
+The exact npm tarball integrity and bundled asset SHA-256 are recorded in
+public/vendor-manifest.json. The asset is bundled so installation and captures
+require no CDN access, dependency install, or renderer build step.

@@ -1,7 +1,7 @@
 const http=require('node:http'),fs=require('node:fs'),fsp=require('node:fs/promises'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto');
 const {Store}=require('./lib/store.cjs'),{VoiceSession}=require('./voice-session.cjs');
 const DEFAULT_DIRECTORY=path.join(os.homedir(),'.live-annotation');
-function createServer({directory=DEFAULT_DIRECTORY,Voice=VoiceSession,voiceAvailable=process.platform==='darwin',webhook=null,webhookToken=null,submit=null,deliveryMode=null,project=null,preview=null}={}){
+function createServer({directory=DEFAULT_DIRECTORY,Voice=VoiceSession,voiceAvailable=process.platform==='darwin',webhook=null,webhookToken=null,submit=null,deliveryMode=null,project=null,preview=null,sessionId=null}={}){
  const mode=deliveryMode||(submit?'push':webhook?'webhook':'queue'),push=!!(submit||webhook);
  if(submit&&webhook)throw Error('Choose one delivery destination');
  if(webhook){const url=new URL(webhook);if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw Error('Receiver must be an HTTP(S) URL without embedded credentials');if(url.protocol==='http:'&&!['localhost','127.0.0.1','[::1]'].includes(url.hostname))throw Error('Remote receivers require HTTPS')}
@@ -35,11 +35,11 @@ function createServer({directory=DEFAULT_DIRECTORY,Voice=VoiceSession,voiceAvail
     const name=url.pathname==='/'?'index.html':url.pathname.slice(1);
     if(!/^[a-z0-9.-]+$/.test(name))return json(res,404,{error:'Not found'});
     const file=path.join(__dirname,'public',name);if(!fs.existsSync(file)||!fs.statSync(file).isFile())return json(res,404,{error:'Not found'});
-    let data=await fsp.readFile(file);if(name==='index.html')data=data.toString().replace('<!--CONFIG-->',`<meta name="study-voice-token" content="${token}"><script>window.serviceConfig=${JSON.stringify({voiceAvailable,mode,project,preview}).replace(/</g,'\\u003c')}</script>`);
+    let data=await fsp.readFile(file);if(name==='index.html')data=data.toString().replace('<!--CONFIG-->',`<meta name="study-voice-token" content="${token}"><script>window.serviceConfig=${JSON.stringify({voiceAvailable,mode,project,preview,sessionId}).replace(/</g,'\\u003c')}</script>`);
     res.writeHead(200,{'Content-Type':({'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.json':'application/json'})[path.extname(name)]||'application/octet-stream'});return res.end(data);
    }
    if(req.headers['x-study-token']!==token||(req.headers.origin&&!hosts.has(req.headers.origin.replace(/^http:\/\//,''))))return json(res,403,{error:'Invalid local session'});
-   if(req.method==='GET'&&url.pathname==='/api/status')return json(res,200,{mode,voiceAvailable,project,submissions:(await store.list()).map(({requestHash,...state})=>state)});
+   if(req.method==='GET'&&url.pathname==='/api/status')return json(res,200,{mode,voiceAvailable,project,sessionId,submissions:(await store.list()).map(({requestHash,...state})=>state)});
    if(req.method==='GET'&&url.pathname==='/api/voice/events'){
     const s=sessions.get(url.searchParams.get('id'));if(!s)return json(res,404,{error:'Dictation session ended'});s.lastPoll=Date.now();return json(res,200,{events:s.events.filter(e=>e.seq>(Number(url.searchParams.get('after'))||0)),done:s.done});
    }
