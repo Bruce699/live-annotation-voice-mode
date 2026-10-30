@@ -5,7 +5,7 @@
   if(e.data?.type==='live-delivery-status'){
    deliveryError=e.data.error||'';const send=document.querySelector('#chat-send');if(send)send.title=deliveryError||'Send';
    const status=document.querySelector('#live-delivery-status'),last=e.data.submissions?.at(-1);
-   if(status){status.textContent=deliveryError||(last?.status==='delivered'?'Delivered to agent':last?.status==='delivering'?'Sending to agent…':last?.status==='queued'?(e.data.mode==='queue'?'Saved locally — waiting for your agent receiver':'Waiting to send to agent…'):last?.status==='claimed'?'Agent receiver is processing…':'');status.dataset.error=String(!!deliveryError)}
+   if(status){status.textContent=deliveryError||(last?.status==='delivering'?'Sending to agent…':last?.status==='queued'?(e.data.mode==='queue'?'Saved locally — waiting for your agent receiver':'Waiting to send to agent…'):last?.status==='claimed'?'Agent receiver is processing…':'');status.dataset.error=String(!!deliveryError)}
    const retry=document.querySelector('#live-delivery-retry');if(retry)retry.hidden=!e.data.submissions?.some(item=>item.status==='failed');
   }
   if(e.data?.type==='live-submit-result'){const pending=requests.get(e.data.requestId);if(!pending)return;clearTimeout(pending.timer);requests.delete(e.data.requestId);e.data.error?pending.reject(Error(e.data.error)):pending.resolve(e.data.receipt)}

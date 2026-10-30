@@ -16,3 +16,26 @@ button:hover{background:var(--la-control-hover)}
 button:focus-visible,a:focus-visible{outline:2px solid var(--la-focus);outline-offset:3px}
 .workspace p,footer,#capture-status,#capture-empty{color:var(--la-muted)}
 #delivery-status:not(:empty){color:var(--la-error-text);background:var(--la-error);border-radius:8px;padding:6px 9px}
+
+/* Continuous sidebar glass stays behind the composer iframe. */
+.frame{
+ position:relative;
+ background:var(--la-sidebar-glass);
+ box-shadow:inset 0 0 0 1px var(--la-sidebar-rim),inset 0 1px 1px var(--la-sidebar-sheen),var(--la-sidebar-shadow);
+}
+/* Keep the sidebar material behind the iframe so its input can blur history. */
+.frame::before{
+ content:"";
+ position:absolute;
+ inset:1px;
+ border-radius:inherit;
+ pointer-events:none;
+ -webkit-backdrop-filter:blur(28px) saturate(1.2);
+ backdrop-filter:blur(28px) saturate(1.2);
+}
+.frame>.surface{position:relative}
+
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){
+ .frame{background:var(--la-sidebar);box-shadow:inset 0 0 0 1px var(--la-border)}
+ .frame::before{display:none}
+}

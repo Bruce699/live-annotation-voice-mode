@@ -4,6 +4,10 @@
  --la-sidebar-inset: 24px;
  --la-canvas: #e9e9eb;
  --la-sidebar: #f1f1f1;
+ --la-sidebar-glass: rgb(247 250 255 / .54);
+ --la-sidebar-rim: rgb(255 255 255 / .68);
+ --la-sidebar-sheen: rgb(255 255 255 / .55);
+ --la-sidebar-shadow: 0 8px 24px -18px rgb(42 53 72 / .22);
  --la-stage: #f4f4f5;
  --la-surface: #ffffff;
  --la-control: #f1f1f3;
@@ -27,11 +31,26 @@
  --la-focus: #62626e;
  --la-wave: #64646c;
  --la-shadow: 0 2px 12px rgb(0 0 0 / .035);
+ --la-font: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+ --la-glass: rgb(255 255 255 / .58);
+ --la-glass-rgb: 255 255 255;
+ --la-glass-alpha: .58;
+ --la-glass-expansion: .3;
+ --la-glass-top: rgb(255 255 255 / .78);
+ --la-glass-bottom: rgb(219 229 243 / .28);
+ --la-glass-rim: rgb(255 255 255 / .88);
+ --la-glass-inner: rgb(255 255 255 / .72);
+ --la-glass-shadow: 0 12px 30px -14px rgb(41 51 70 / .2), 0 2px 6px rgb(41 51 70 / .035);
+ --la-glass-drop: rgb(210 226 247 / .68);
 }
 @media (prefers-color-scheme: dark) {
  :root {
   --la-canvas: #18191b;
   --la-sidebar: #1f2023;
+  --la-sidebar-glass: rgb(37 42 50 / .64);
+  --la-sidebar-rim: rgb(224 235 255 / .12);
+  --la-sidebar-sheen: rgb(255 255 255 / .06);
+  --la-sidebar-shadow: 0 8px 24px -18px rgb(0 0 0 / .4);
   --la-stage: #202125;
   --la-surface: #292a2e;
   --la-control: #35363c;
@@ -55,5 +74,15 @@
   --la-focus: #b9bbc8;
   --la-wave: #c0c1cb;
   --la-shadow: 0 2px 12px rgb(0 0 0 / .16);
+  --la-glass: rgb(44 47 54 / .72);
+  --la-glass-rgb: 44 47 54;
+  --la-glass-alpha: .72;
+  --la-glass-expansion: .18;
+  --la-glass-top: rgb(114 125 144 / .17);
+  --la-glass-bottom: rgb(77 96 128 / .14);
+  --la-glass-rim: rgb(216 228 249 / .2);
+  --la-glass-inner: rgb(232 240 255 / .1);
+  --la-glass-shadow: 0 14px 32px -14px rgb(0 0 0 / .44), 0 2px 6px rgb(0 0 0 / .12);
+  --la-glass-drop: rgb(70 91 126 / .78);
  }
 }

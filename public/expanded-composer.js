@@ -1,5 +1,38 @@
 (function(root){
- const motion={duration:250,easing:'cubic-bezier(0.5, 0, 0, 1)'};
+ // Analytic critical damping preserves velocity when a gesture changes its
+ // destination. The same spring drives the form, editable input and image shelf.
+ class ComposerSpring{
+  constructor(value,update,complete=()=>{},options={}){
+   this.value={...value};this.target={...value};this.velocity=Object.fromEntries(Object.keys(value).map(key=>[key,0]));
+   this.update=update;this.complete=complete;this.options=options;this.frame=0;
+   this.tick=this.tick.bind(this);
+  }
+  reduced(){return this.options.reduce?.()??!!root.matchMedia?.('(prefers-reduced-motion: reduce)').matches}
+  to(target,from){
+   if(from)this.value={...from};this.target={...target};
+   if(this.reduced()||!root.requestAnimationFrame){this.finish();return;}
+   this.update(this.value);
+   if(!this.frame){this.time=performance.now();this.frame=root.requestAnimationFrame(this.tick);}
+  }
+  tick(now){
+   if(this.reduced()){this.finish();return;}
+   const dt=Math.min(.05,Math.max(0,(now-this.time)/1000)),frequency=22;this.time=now;let settled=true;
+   for(const key of Object.keys(this.target)){
+    const offset=this.value[key]-this.target[key],c=this.velocity[key]+frequency*offset,decay=Math.exp(-frequency*dt);
+    this.value[key]=this.target[key]+(offset+c*dt)*decay;
+    this.velocity[key]=(this.velocity[key]-frequency*c*dt)*decay;
+    const tolerance=key==='morph'?.001:.08;
+    if(Math.abs(this.value[key]-this.target[key])>tolerance||Math.abs(this.velocity[key])>tolerance*10)settled=false;
+   }
+   if(settled){this.finish();return;}
+   this.update(this.value);this.frame=root.requestAnimationFrame(this.tick);
+  }
+  finish(){
+   if(this.frame)root.cancelAnimationFrame?.(this.frame);this.frame=0;
+   this.value={...this.target};for(const key of Object.keys(this.velocity))this.velocity[key]=0;
+   this.update(this.value);this.complete();
+  }
+ }
  function draftBlocks(text,images,notes){
   const refs=new Map([...images.map(image=>['[Image '+image.number+']',{type:'image',item:image}]),...notes.map(note=>['[Text '+note.number+': '+note.text+']',{type:'quote',item:note}])]);
   const escaped=[...refs.keys()].sort((a,b)=>b.length-a.length).map(value=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
@@ -21,12 +54,16 @@
    if(window.ResizeObserver){this.readerObserver=new ResizeObserver(()=>{if(this.expanded)this.buildMap()});this.readerObserver.observe(this.document)}
    this.document.addEventListener('input',()=>this.commit());
    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&this.expanded){event.preventDefault();event.stopImmediatePropagation();this.toggle(false)}},true);
-   window.addEventListener('resize',()=>{this.animation?.cancel();if(this.expanded)this.place(this.targetRect());else this.clearPosition();this.options.sizeInput();this.updateAvailability()});
+   window.addEventListener('resize',()=>{
+    if(this.expanded||this.geometry?.frame)this.morph(this.expanded);
+    else{this.options.sizeInput();this.updateAvailability()}
+   });
    this.updateAvailability();
   }
   updateAvailability(){
    const input=this.options.input;
-   const available=this.expanded||!!input.value.trim()&&input.scrollHeight>input.clientHeight+2;
+   const targetHeight=Number(input.dataset.targetHeight)||input.clientHeight;
+   const available=this.expanded||!!input.value.trim()&&input.scrollHeight>targetHeight+2;
    this.button.classList.toggle('is-available',available);this.button.disabled=!available;this.button.setAttribute('aria-hidden',String(!available));
   }
   setMapSettings(settings){
@@ -41,27 +78,41 @@
    // sidebar viewport, accounting for its offset and the form's border.
    const tabOffset=(parseFloat(getComputedStyle(this.button).top)||0)+(parseFloat(style.borderTopWidth)||0);
    const top=Math.max(inset,toolbar?.bottom||0)-tabOffset;
-   return {left:panel.left,top,width:panel.width,height:Math.max(0,panel.bottom-top)};
+   // Expanded glass reaches the iframe edge; the panel's bottom inset belongs
+   // only to the compact composer.
+   const bottom=this.form.ownerDocument.defaultView.innerHeight;
+   return {left:panel.left,top,width:panel.width,height:Math.max(0,bottom-top)};
   }
   place(rect){
    const panel=this.form.closest('#chat-panel').getBoundingClientRect();
    this.form.classList.add('composer-floating');Object.assign(this.form.style,{left:rect.left-panel.left+'px',top:rect.top-panel.top+'px',width:rect.width+'px',height:rect.height+'px'});
   }
-  clearPosition(){this.form.classList.remove('composer-floating');for(const key of ['left','top','width','height'])this.form.style[key]=''}
+  clearPosition(){this.form.classList.remove('composer-floating');for(const key of ['left','top','width','height','paddingTop','paddingRight','paddingBottom','paddingLeft','borderTopLeftRadius','borderTopRightRadius','borderBottomRightRadius','borderBottomLeftRadius'])this.form.style[key]=''}
+  appearance(rect=this.form.getBoundingClientRect()){
+   const style=getComputedStyle(this.form),values={left:rect.left,top:rect.top,width:rect.width,height:rect.height};
+   for(const key of ['paddingTop','paddingRight','paddingBottom','paddingLeft','borderTopLeftRadius','borderTopRightRadius','borderBottomRightRadius','borderBottomLeftRadius'])values[key]=parseFloat(style[key])||0;
+   return values;
+  }
   toggle(value=!this.expanded){
    if(value===this.expanded)return;
-   this.options.hideTooltip();const before=this.form.getBoundingClientRect(),beforeStyle=getComputedStyle(this.form),beforeRadius=beforeStyle.borderRadius,beforePadding=beforeStyle.padding;this.animation?.cancel();this.contentAnimation?.cancel();
+   this.options.hideTooltip();this.morph(value);
+  }
+  morph(value){
+   const before=this.appearance(),progress=this.geometry?.value.morph??(this.expanded?1:0),changing=value!==this.expanded;
    this.expanded=value;this.form.classList.toggle('composer-expanded',value);this.button.setAttribute('aria-expanded',String(value));this.button.setAttribute('aria-label',value?'Collapse input':'Expand input');this.document.hidden=!value;this.reader.hidden=!value;
-   this.clearPosition();this.options.sizeInput();if(value)this.refresh(true);
-   const after=value?this.targetRect():this.form.getBoundingClientRect(),afterStyle=getComputedStyle(this.form),afterRadius=afterStyle.borderRadius,afterPadding=afterStyle.padding;
-   this.place(after);this.updateAvailability();
-   const panel=this.form.closest('#chat-panel').getBoundingClientRect();
-   const keyframe=(rect,borderRadius,padding)=>({left:rect.left-panel.left+'px',top:rect.top-panel.top+'px',width:rect.width+'px',height:rect.height+'px',borderRadius,padding});
-   if(this.form.animate&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
-    const animation=this.form.animate([keyframe(before,beforeRadius,beforePadding),keyframe(after,afterRadius,afterPadding)],motion);this.animation=animation;
-    animation.onfinish=()=>{if(this.animation!==animation)return;this.animation=null;if(!this.expanded)this.clearPosition()};
-    this.contentAnimation=(value?this.document:this.options.input).animate([{opacity:0},{opacity:1}],motion);
-   }else if(!value)this.clearPosition();
+   this.clearPosition();this.options.sizeInput(false,true);if(value&&changing)this.refresh(true);
+   const read=()=>this.appearance(value?this.targetRect():this.form.getBoundingClientRect());
+   const after={...(!value&&this.options.measureCompact?this.options.measureCompact(read):read()),morph:value?1:0};
+   if(!this.geometry)this.geometry=new ComposerSpring({...before,morph:progress},values=>{
+    this.place(values);
+    for(const [key,number] of Object.entries(values))if(key!=='morph'&&!['left','top','width','height'].includes(key))this.form.style[key]=number+'px';
+    const p=Math.max(0,Math.min(1,values.morph));this.form.style.setProperty('--composer-morph',String(p));
+    this.reader.style.opacity=String(Math.min(1,p*2));this.options.input.style.opacity=String(Math.min(1,(1-p)*2));
+   },()=>{
+    this.form.classList.remove('composer-morphing');this.reader.style.opacity='';this.options.input.style.opacity='';
+    if(!this.expanded)this.clearPosition();
+   });
+   this.form.classList.add('composer-morphing');this.geometry.to(after,{...before,morph:progress});this.updateAvailability();
   }
   refresh(force=false){
    this.updateAvailability();
@@ -140,5 +191,5 @@
    this.buildMap();
   }
  }
- if(typeof module==='object')module.exports={draftBlocks};else root.ExpandedComposer=ExpandedComposer;
+ if(typeof module==='object')module.exports={draftBlocks,ComposerSpring};else{root.ExpandedComposer=ExpandedComposer;root.ComposerSpring=ComposerSpring;}
 })(globalThis);

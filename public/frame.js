@@ -31,23 +31,52 @@ function noteTile(note){const tile=document.createElement('div');tile.className=
 if(model.text.trim())model.text=transcriptDraft(model.text);
 function imageLink(image,{tooltip=true}={}){const link=document.createElement('a');link.className='study-capture-image';link.download=image.name;if(tooltip)bindTooltip(link,'Image '+image.number);link.dataset.imageId=image.id;link.dataset.kind=image.kind||'';const img=document.createElement('img');img.alt=image.name;const caption=document.createElement('span');caption.textContent='Image '+image.number;link.append(img,caption);if(imageData.has(image.id)){link.href=imageData.get(image.id);img.src=link.href}else parent.postMessage({type:'study-image-get',id:image.id},'*');return link}
 const captureShelf=document.createElement('div');captureShelf.className='study-capture-shelf';$('#chat-attachments').before(captureShelf);captureShelf.append($('#chat-attachments'));
-const captureMotion={duration:350,easing:'cubic-bezier(0.12, 1, 0.2, 1)'},shrinkMotion={duration:300,easing:'cubic-bezier(0.5, 0, 0, 1)'};let shelfAnimation;
+const captureMotion={duration:420,easing:'cubic-bezier(0.16, 1, 0.3, 1)'};let shelfSpring,inputSpring;
 $('#chat-attachments').addEventListener('scroll',hideTooltip);
 function renderImages(animateId,shrink=false){const box=$('#chat-attachments'),before=captureShelf.getBoundingClientRect().height;
  const existing=new Map([...box.children].map(el=>[el.dataset.imageId,el]));
  const children=attachments().map(image=>{if(existing.has(image.id))return existing.get(image.id);const wrap=document.createElement('div');wrap.className='study-capture-thumb';wrap.dataset.imageId=image.id;const remove=document.createElement('button');remove.type='button';remove.setAttribute('aria-label','Remove '+image.name);remove.innerHTML='<svg viewBox="0 0 14 14" aria-hidden="true"><path d="m3 3 8 8m0-8-8 8"/></svg>';remove.onclick=()=>{hideTooltip();model.images=model.images.filter(i=>i.id!==image.id);model.notes=model.notes.filter(i=>i.id!==image.id);input.value=input.value.split(reference(image)).join('').replace(/ {2,}/g,' ').trim();model.text=input.value;if(session)session.marks=session.marks.filter(m=>!(m.number===image.number&&(m.kind==='note')===(image.kind==='note')));renderImages(null,true);sizeInput(true);sendState();announce()};wrap.append(image.kind==='note'?noteTile(image):imageLink(image),remove);return wrap});
- for(const child of [...box.children])if(!children.includes(child))child.remove();
+ // Retain the last visible tile while its shelf closes; model/draft removal is
+ // immediate, and inert prevents interaction with the outgoing reference.
+ if(children.length)for(const child of [...box.children])if(!children.includes(child))child.remove();
  for(const child of children)if(child.parentNode!==box)box.append(child);
- box.hidden=!children.length;
- if((animateId||shrink)&&captureShelf.animate&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
-  shelfAnimation?.cancel();const after=captureShelf.getBoundingClientRect().height;
-  shelfAnimation=captureShelf.animate([{height:before+'px'},{height:after+'px'}],shrink?shrinkMotion:captureMotion);
-  const added=children.find(el=>el.dataset.imageId===animateId);added?.animate([{transform:'scale(0)',opacity:0},{transform:'scale(1)',opacity:1}],captureMotion);
+ box.hidden=!children.length;box.inert=!children.length;
+ captureShelf.style.height='';const after=captureShelf.getBoundingClientRect().height;
+ if(!children.length&&before>0)box.hidden=false;
+ if(window.ComposerSpring){
+  if(!shelfSpring)shelfSpring=new ComposerSpring({height:before},value=>{captureShelf.style.height=Math.max(0,value.height)+'px'},()=>{
+   if(!attachments().length){box.hidden=true;box.replaceChildren();}
+   captureShelf.style.height='';
+  });
+  shelfSpring.to({height:after},{height:before});
+ }else{box.hidden=!children.length;if(box.hidden)box.replaceChildren();}
+ if(animateId&&captureShelf.animate&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
+  const added=children.find(el=>el.dataset.imageId===animateId);added?.animate([{transform:'translateY(5px) scale(.92)',opacity:0},{transform:'translateY(0) scale(1)',opacity:1}],captureMotion);
  }
  if(animateId)box.scrollLeft=box.scrollWidth;
 }
 
 const history=document.createElement('div');history.className='chat-history';$('#chat-messages').before(history);history.append($('#chat-messages'));
+// History owns the whole sidebar; only its scroll clearance follows the footer.
+// This keeps the final message reachable while older messages pass behind glass.
+{
+ const panel=$('#chat-panel'),scroll=$('#chat-messages'),form=$('#chat-form');let frame=0;
+ const sync=()=>{
+  frame=0;if(form.classList.contains('composer-floating'))return;
+  const bottom=history.getBoundingClientRect().bottom;
+  const footer=[...panel.children].filter(node=>node!==history&&node.getClientRects().length).map(node=>node.getBoundingClientRect().top);
+  const clearance=Math.ceil(Math.max(0,bottom-Math.min(bottom,...footer))+12);
+  if(history.style.getPropertyValue('--history-scroll-clearance')===clearance+'px')return;
+  const pinned=scroll.scrollHeight-scroll.scrollTop-scroll.clientHeight<8;
+  history.style.setProperty('--history-scroll-clearance',clearance+'px');
+  if(pinned)scroll.scrollTop=scroll.scrollHeight;
+ };
+ const schedule=()=>{if(!frame)frame=requestAnimationFrame(sync);};
+ const observer=new ResizeObserver(schedule);
+ const watchFooter=()=>{for(const node of panel.children)if(node!==history)observer.observe(node);schedule();};
+ new MutationObserver(watchFooter).observe(panel,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class','hidden']});
+ window.addEventListener('resize',schedule);watchFooter();
+}
 const announce=()=>{expandedComposer?.refresh();parent.postMessage({type:'sidebar-study',id:model.id,state:model.state,text:input.value,messages:model.messages,images:model.images,notes:model.notes,captures:model.images.length},'*')};
 const wave=new VoiceWaveform($('#voice-wave'),{quietThreshold:.001,gain:2.2,adaptiveNoiseFloor:true,speed:model.waveSpeed??.4,barWidth:model.waveBarWidth??2.5,gap:model.waveGap??2.5});let available=false,session=null;
 $('#voice-status').classList.add('sr-only');
@@ -56,7 +85,20 @@ const cancelPath=document.createElementNS('http://www.w3.org/2000/svg','path');c
 const transcribing=document.createElement('span');transcribing.id='voice-transcribing';transcribing.textContent='Transcribing';transcribing.setAttribute('aria-hidden','true');transcribing.hidden=true;$('#voice-wave').after(transcribing);
 const finishIcon=document.createElement('span');finishIcon.className='voice-finish-icon';finishIcon.textContent='■';finishIcon.setAttribute('aria-hidden','true');
 const spinner=document.createElement('span');spinner.className='voice-spinner';spinner.setAttribute('aria-hidden','true');$('#voice-finish').replaceChildren(finishIcon,spinner);
-function sizeInput(shrink=false){const before=input.getBoundingClientRect().height;input.style.height='auto';input.style.height=Math.min(model.layout==='expanded'?290:150,Math.max(44,input.scrollHeight))+'px';if(shrink&&input.animate&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)input.animate([{height:before+'px'},{height:input.style.height}],shrinkMotion);expandedComposer?.updateAvailability()}
+function sizeInput(shrink=false,instant=false){
+ // Edits during a collapse change the destination of the whole surface.
+ // Its measurement calls back with instant=true, avoiding a second input spring.
+ if(!instant&&expandedComposer?.geometry?.frame&&!expandedComposer.expanded){expandedComposer.morph(false);return;}
+ const before=input.getBoundingClientRect().height;input.style.height='auto';
+ const max=model.layout==='expanded'?290:150,minimum=parseFloat(getComputedStyle(input).minHeight)||44;
+ const height=Math.min(max,Math.max(minimum,input.scrollHeight));input.dataset.targetHeight=String(height);
+ if(window.ComposerSpring){
+  if(!inputSpring)inputSpring=new ComposerSpring({height:before||height},value=>{input.style.height=Math.max(minimum,value.height)+'px'},()=>expandedComposer?.updateAvailability());
+  if(instant||!before){inputSpring.target={height};inputSpring.finish();}
+  else inputSpring.to({height},{height:before});
+ }else input.style.height=height+'px';
+ expandedComposer?.updateAvailability();
+}
 function status(){if(!session)return;$('#voice-status').textContent=session.state==='recording'?'Listening':session.state==='stopping'?'Transcribing':session.message||'Starting microphone…'}
 function sendState(){$('#chat-send').disabled=pendingCaptures.size>0||(session?session.state!=='recording':!input.value.trim()&&!model.images.length&&!model.notes.length)}
 function renderMessages(){const transcript=$('#chat-transcript');transcript.replaceChildren();for(const message of model.messages){const node=document.createElement('div');node.className='chat-message user';node.textContent=message.text;if(message.images?.length){const images=document.createElement('div');images.className='study-message-images';images.append(...message.images.map(imageLink));node.append(images)}transcript.append(node)}$('#chat-messages').scrollTop=$('#chat-messages').scrollHeight}
@@ -134,7 +176,41 @@ function completeVoice(){
  const prefix=input.value.trim()?input.value+'\n\n':'';model.text=transcriptDraft(prefix+spoken);session=null;model.state='idle';render();announce();if(submit)submitDraft();
 }
 $('#chat-form').onsubmit=e=>{e.preventDefault();if(pendingCaptures.size)return;if(session){if(session.state!=='recording')return;session.submit=true;session.state='stopping';render();input.focus();command('stop')}else submitDraft()};
-if(window.ExpandedComposer)expandedComposer=new ExpandedComposer({form:$('#chat-form'),input,hideTooltip,sizeInput,images:()=>model.images,notes:()=>model.notes,recording:()=>!!session,text:()=>session?attachments().map(reference).join(' '):transcriptDraft(),image:image=>imageLink(image,{tooltip:false}),remove:id=>{const item=[...$('#chat-attachments').children].find(el=>el.dataset.imageId===id);item?.querySelector('button').click()},change:text=>{input.value=text;model.text=text;sendState();announce()}});
+if(window.ExpandedComposer)expandedComposer=new ExpandedComposer({form:$('#chat-form'),input,hideTooltip,sizeInput,measureCompact:read=>{
+ // Measure the destination shelf, while leaving its visible spring untouched.
+ const box=$('#chat-attachments'),height=captureShelf.style.height,hidden=box.hidden;
+ captureShelf.style.height='';box.hidden=!attachments().length;
+ try{return read();}finally{captureShelf.style.height=height;box.hidden=hidden;}
+},images:()=>model.images,notes:()=>model.notes,recording:()=>!!session,text:()=>session?attachments().map(reference).join(' '):transcriptDraft(),image:image=>imageLink(image,{tooltip:false}),remove:id=>{const item=[...$('#chat-attachments').children].find(el=>el.dataset.imageId===id);item?.querySelector('button').click()},change:text=>{input.value=text;model.text=text;sendState();announce()}});
+if(expandedComposer){
+ // One clipped glass surface carries both the input and its protruding tab.
+ // Its outline follows the same contour, without a border crossing the join.
+ const form=$('#chat-form'),button=expandedComposer.button,material=document.createElement('div');material.className='composer-material';material.setAttribute('aria-hidden','true');material.inert=true;
+ const outline=document.createElementNS('http://www.w3.org/2000/svg','svg'),path=document.createElementNS('http://www.w3.org/2000/svg','path');outline.classList.add('composer-material-outline');outline.append(path);material.append(outline);form.prepend(material);let silhouette='';
+ const sync=()=>{
+  const style=getComputedStyle(form),buttonStyle=getComputedStyle(button),rect=form.getBoundingClientRect();
+  const border=key=>parseFloat(style[key])||0,cap=Math.max(0,-parseFloat(buttonStyle.top)-border('borderTopWidth')),w=rect.width,h=rect.height+cap,center=w/2;
+  if(!w||!h)return;
+  Object.assign(material.style,{left:-border('borderLeftWidth')+'px',right:-border('borderRightWidth')+'px',top:buttonStyle.top,bottom:-border('borderBottomWidth')+'px'});
+  const radii=['borderTopLeftRadius','borderTopRightRadius','borderBottomRightRadius','borderBottomLeftRadius'].map(key=>Math.min(parseFloat(style[key])||0,w/2,rect.height/2));
+  const contour=inset=>{
+   const [tl,tr,br,bl]=radii.map(radius=>Math.max(0,radius-inset)),left=inset,right=w-inset,top=cap+inset,bottom=h-inset,t=cap/28;
+   let d=`M${left+tl} ${top}`;
+   if(button.classList.contains('is-available'))d+=`H${center-48}C${center-39} ${top} ${center-35} ${top-5*t} ${center-35} ${top-12*t}C${center-35} ${inset+7*t} ${center-28} ${inset} ${center-19} ${inset}H${center+19}C${center+28} ${inset} ${center+35} ${inset+7*t} ${center+35} ${inset+16*t}C${center+35} ${inset+23*t} ${center+39} ${top} ${center+48} ${top}`;
+   return d+`H${right-tr}Q${right} ${top} ${right} ${top+tr}V${bottom-br}Q${right} ${bottom} ${right-br} ${bottom}H${left+bl}Q${left} ${bottom} ${left} ${bottom-bl}V${top+tl}Q${left} ${top} ${left+tl} ${top}Z`;
+  };
+  const shape=contour(0);
+  if(shape!==silhouette){
+   silhouette=shape;
+   const mask=`url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path fill="white" d="${shape}"/></svg>`)}")`;
+   material.style.setProperty('-webkit-mask-image',mask);material.style.maskImage=mask;
+  }
+  outline.setAttribute('viewBox',`0 0 ${w} ${h}`);path.setAttribute('d',contour(.5));
+ };
+ new ResizeObserver(sync).observe(form);
+ new MutationObserver(sync).observe(form,{attributes:true,attributeFilter:['style','class']});
+ new MutationObserver(sync).observe(button,{attributes:true,attributeFilter:['class']});sync();
+}
 renderMessages();render();parent.postMessage({type:'study-voice-hello'},'*');
 })();
 
