@@ -1,0 +1,4 @@
+{
+  "setup": "npm install --no-audit --no-fund --prefer-offline --loglevel=error",
+  "run": "npm start -- --delivery queue --port 3000 --directory .live-annotation/openlayer"
+}
